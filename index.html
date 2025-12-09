@@ -1,0 +1,1531 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Multiple Named Tables Side by Side with Line Charts</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+                        /* Vibrant Page Header */
+                        .page-header {
+                            width: 100%;
+                            background: linear-gradient(90deg, #43c6ac 0%, #1976d2 100%);
+                            color: #fff;
+                            padding: 32px 0 18px 0;
+                            text-align: center;
+                            font-family: 'Segoe UI', Arial, sans-serif;
+                            box-shadow: 0 2px 16px #1976d244;
+                            margin-bottom: 0;
+                            letter-spacing: 1px;
+                        }
+                        .page-header h1 {
+                            font-size: 2.7em;
+                            margin: 0 0 8px 0;
+                            font-weight: 700;
+                            text-shadow: 1px 2px 12px #43c6ac88, 0 2px 8px #fff7;
+                        }
+                        .page-header p {
+                            font-size: 1.25em;
+                            margin: 0;
+                            font-weight: 400;
+                            color: #f8ffae;
+                            text-shadow: 0 1px 6px #1976d288;
+                        }
+                /* Vibrant Home Page Styles */
+                #homePage {
+                    background: transparent;
+                    border-radius: 0;
+                    box-shadow: none;
+                    padding: 40px 0 60px 0;
+                    margin: 30px auto 40px auto;
+                    max-width: 700px;
+                    color: #222;
+                }
+                #homePage h1 {
+                    color: #1976d2;
+                    font-size: 2.3em;
+                    margin-bottom: 10px;
+                    letter-spacing: 1px;
+                    text-shadow: 1px 2px 8px #fff7, 0 2px 8px #43c6ac44;
+                }
+                .feature-list {
+                    margin: 32px auto 0 auto;
+                    padding: 0;
+                    list-style: none;
+                    max-width: 520px;
+                }
+                .feature-item {
+                    border-radius: 0;
+                    margin-bottom: 8px;
+                    padding: 4px 0;
+                    font-size: 1em;
+                    font-weight: 400;
+                    color: inherit;
+                    box-shadow: none;
+                    display: list-item;
+                    align-items: initial;
+                    gap: 0;
+                    transition: none;
+                }
+                .feature-item:hover {
+                    transform: none;
+                    box-shadow: none;
+                }
+                .feature-icon {
+                    font-size: 1em;
+                    margin-right: 4px;
+                    filter: none;
+                }
+                #homePage p {
+                    font-size: 1.18em;
+                    color: #333;
+                    margin-bottom: 28px;
+                }
+        body {
+            background: #e3f2fd;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        .tables-flex { display: flex; flex-wrap: wrap; gap: 30px; justify-content: center; align-items: flex-start; margin-top: 30px; }
+        .table-container {
+            border: 2px solid #43c6ac;
+            padding: 20px;
+            background: #fffbe7;
+            transition: background 0.3s, border-color 0.3s;
+            border-radius: 16px;
+            box-shadow: 0 2px 16px #43c6ac22;
+        }
+        .table-container.limit-reached {
+            background: #ffe5e5;
+            border-color: #d00;
+        }
+        .table-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+            color: #1976d2;
+        }
+        .limit-message {
+            color: #d00;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            table-layout: fixed; /* prevent columns from stretching oddly */
+            margin-bottom: 10px;
+            background: #f8ffae;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 1px 8px #43c6ac22;
+        }
+        th {
+            background: #43c6ac;
+            color: #fff;
+            border: 1px solid #43c6ac;
+            padding: 8px;
+            text-align: center;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        td {
+            border: 1px solid #43c6ac;
+            padding: 6px 8px;
+            text-align: center;
+            background: #fffbe7;
+            overflow-wrap: anywhere;
+        }
+        /* Column sizing: keep table compact and readable */
+        .table-container table th:nth-child(1),
+        .table-container table td:nth-child(1) { /* # */
+            width: 32px;
+        }
+        .table-container table th:nth-child(2),
+        .table-container table td:nth-child(2) { /* Name */
+            width: 26%;
+        }
+        .table-container table th:nth-child(3),
+        .table-container table td:nth-child(3) { /* Value */
+            width: 12%;
+        }
+        .table-container table th:nth-child(4),
+        .table-container table td:nth-child(4) { /* Date */
+            width: 16%;
+        }
+        .table-container table th:nth-child(5),
+        .table-container table td:nth-child(5) { /* Note */
+            width: 26%;
+        }
+        .table-container table th:nth-child(6),
+        .table-container table td:nth-child(6) { /* Action */
+            width: 25%;
+        }
+        tfoot td {
+            font-weight: bold;
+            background: #e0f7fa;
+            color: #1976d2;
+        }
+        .input-row { text-align: center; margin-bottom: 10px; }
+        .add-table-btn, .export-btn, .import-btn {
+            margin: 20px 10px;
+            display: inline-block;
+            background: linear-gradient(90deg, #43c6ac 0%, #1976d2 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 18px;
+            font-size: 1em;
+            font-weight: 500;
+            cursor: pointer;
+            box-shadow: 0 2px 8px #1976d244;
+            transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+        }
+        .add-table-btn:hover, .export-btn:hover, .import-btn:hover {
+            background: linear-gradient(90deg, #1976d2 0%, #43c6ac 100%);
+            box-shadow: 0 4px 16px #1976d288;
+            transform: scale(1.04);
+        }
+        .table-name-input, .table-limit-input {
+            margin-right: 10px;
+            border: 1.5px solid #43c6ac;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 1em;
+            background: #fff;
+            color: #1976d2;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .table-name-input:focus, .table-limit-input:focus {
+            border-color: #1976d2;
+        }
+        .progress-bar-container {
+            width: 100%;
+            height: 18px;
+            background: #e0f7fa;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            border-radius: 8px;
+            transition: width 0.4s, background 0.4s;
+            background: linear-gradient(90deg, #43c6ac 0%, #1976d2 100%);
+        }
+        .help-icon {
+            color: #1976d2;
+            border-radius: 50%;
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-left: 4px;
+            border: 1px solid #43c6ac;
+            line-height: 18px;
+            position: relative;
+            width: 18px;
+            display: inline-block;
+            background: #e0f7fa;
+        }
+        .help-tooltip {
+            display: none;
+            position: absolute;
+            left: 24px;
+            top: 0;
+            background: #1976d2;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            z-index: 100;
+            min-width: 180px;
+            max-width: 260px;
+            box-shadow: 0 2px 8px #43c6ac44;
+        }
+        .help-icon:hover .help-tooltip { display: block; }
+
+        /* @media (max-width: 900px) {
+            .tables-flex { flex-direction: column; align-items: stretch; gap: 18px; }
+            .table-container { width: 98vw; min-width: 0; max-width: 99vw; margin-left: auto; margin-right: auto; }
+        } */
+         @media (max-width: 900px) {
+            .tables-flex { gap: 18px; }
+            .table-container {
+                width: auto;
+                min-width: 0;
+                margin-left: auto;
+                margin-right: auto;
+            }
+        }
+        @media (max-width: 600px) {
+            .table-container { padding: 8px; width: 99vw; }
+            .table-title { font-size: 1em; }
+            table, th, td { font-size: 12px; padding: 3px; }
+            .input-row input, .input-row button { font-size: 12px; padding: 4px 4px; }
+            .progress-bar-container { height: 12px !important; }
+            .help-tooltip { left: 0; top: 24px; min-width: 120px; font-size: 12px; max-width: 90vw; padding: 6px 8px; }
+            .help-icon { width: 16px; height: 16px; font-size: 12px; line-height: 16px; }
+            #summaryTableContainer { width: 99vw !important; }
+        }
+        @media (max-width: 400px) {
+            .table-container { width: 100vw; padding: 2px; }
+            .table-title { font-size: 0.95em; }
+            .help-tooltip { font-size: 11px; min-width: 80px; }
+        }
+    </style>
+</head>
+<body>
+        <div class="page-header">
+            <h1>Welcome to Table Context!</h1>
+            <p>Your vibrant space for organizing, comparing, and visualizing tables with ease.</p>
+        </div>
+    <nav style="background:#f5f5f5; border-bottom:1px solid #ccc; padding:12px 0; text-align:center; margin-bottom:24px;">
+        <style>
+            .nav-bar {
+                background: linear-gradient(90deg, #b3e5fc 0%, #0288d1 100%);
+                min-width: 100vw;
+                min-height: 60px;
+                border-radius: 0 !important;
+                box-shadow: 0 2px 12px #0288d122;
+                position: relative;
+                z-index: 10;
+                border-bottom: 2px solid #4fc3f7;
+                padding: 12px 0;
+                text-align: center;
+                margin-bottom: 24px;
+                box-shadow: 0 2px 12px #0288d122;
+            }
+            .nav-bar button {
+                background: #e1f5fe;
+                color: #0288d1;
+                border: none;
+                border-radius: 8px;
+                margin-right: 20px;
+                padding: 8px 22px;
+                font-size: 1.08em;
+                font-weight: 500;
+                cursor: pointer;
+                box-shadow: 0 1px 6px #4fc3f722;
+                transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+            }
+            .nav-bar button:last-child { margin-right: 0; }
+            .nav-bar button:hover, .nav-bar button:focus {
+                background: #4fc3f7;
+                color: #fff;
+                box-shadow: 0 2px 12px #0288d144;
+            }
+            .nav-bar button[style*='font-weight: bold'], .nav-bar button.active {
+                background: #0288d1;
+                color: #fff;
+                font-weight: bold;
+                box-shadow: 0 2px 16px #0288d188;
+            }
+        </style>
+        <nav class="nav-bar">
+            <button onclick="showPage('home')" id="menuHome">Home</button>
+            <button onclick="showPage('create')" id="menuCreate">Create Tables</button>
+            <button onclick="showPage('compare')" id="menuCompare">Compare Tables</button>
+        </nav>
+    </nav>
+    <div id="homePage" style="display:none; text-align:center;">
+        <div class="well">
+            <marquee><font color="red">Currently seeking full time opportunity as Java Developer in USA</font></marquee>
+        </div>
+        <h1>Welcome to Table Context App</h1>
+        <p>Organize, compare, and visualize your data tables with ease! Explore the features below:</p>
+        <ul class="feature-list">
+            <li class="feature-item"><span class="feature-icon">📝</span> <b>Create Tables:</b> Add multiple named tables, set value limits, and manage your data efficiently.</li>
+            <li class="feature-item"><span class="feature-icon">📊</span> <b>Visualize Data:</b> Instantly see your table data as beautiful line charts for quick insights.</li>
+            <li class="feature-item"><span class="feature-icon">🔍</span> <b>Global Search:</b> Search across all tables to find any value or entry in seconds.</li>
+            <li class="feature-item"><span class="feature-icon">⬆️⬇️</span> <b>Import & Export:</b> Backup or share your tables using easy JSON import/export.</li>
+            <li class="feature-item"><span class="feature-icon">⚖️</span> <b>Compare Tables:</b> Upload and compare two sets of tables, with differences visualized in combined charts.</li>
+            <li class="feature-item"><span class="feature-icon">🔔</span> <b>Notifications:</b> Stay updated with a notification log for important actions and changes.</li>
+            <li class="feature-item"><span class="feature-icon">💡</span> <b>Helpful Tooltips:</b> Hover over <b>?</b> icons for quick tips and guidance throughout the app.</li>
+        </ul>
+        <iframe class="embed-responsive-item" src="https://www.youtube.com/embed/xkKcdK1u95s" allowfullscreen></iframe>
+    </div>
+    <div class="well">
+		<iframe class="embed-responsive-item" src="https://www.youtube.com/embed/xkKcdK1u95s" allowfullscreen></iframe>
+	</div>
+    <div id="createPage">
+        <div style="text-align:center; margin-top:20px;">
+            <input type="text" id="tableNameInput" class="table-name-input" placeholder="Table Name" required>
+            <input type="number" id="tableLimitInput" class="table-limit-input" placeholder="Limit" min="1" required>
+            <button class="add-table-btn" onclick="addTable()">+ Add Table</button>
+            <button class="export-btn" onclick="exportTables()">Save-Export</button>
+            <input type="file" class="import-btn" id="importJsonInput" accept=".json" style="display:none" onchange="importTables(event)">
+            <button class="import-btn" onclick="document.getElementById('importJsonInput').click()">Import file</button>
+            <button class="import-btn" onclick="refreshPage()" style="margin-left:8px;">Refresh Page</button>
+            <button class="export-btn" onclick="generatePdf()" style="margin-left:8px;">Download PDF</button>
+            <span class="help-icon" tabindex="0">?
+                <span class="help-tooltip">Add a new table with a name and limit. Limit is the maximum total value allowed for this table.</span>
+            </span>
+            <span class="help-icon" tabindex="0">?
+                <span class="help-tooltip">Export all tables as a JSON file for backup or sharing.</span>
+            </span>
+            <span class="help-icon" tabindex="0">?
+                <span class="help-tooltip">Import tables from a previously exported JSON file. This will replace your current tables.</span>
+            </span>
+            <span class="help-icon" tabindex="0">?
+                <span class="help-tooltip">Compare multiple exported JSON files and see the differences in a combined chart below.</span>
+            </span>
+        </div>
+        <div style="text-align:center; margin: 16px 0;">
+            <input type="text" id="globalSearchInput" placeholder="Search all tables..." style="width:220px; font-size:15px; padding:4px 8px;">
+        </div>
+        <div id="tablesArea" class="tables-flex row g-3"></div>
+        <div id="summaryTableContainer" style="margin: 30px auto; width: 400px;">
+            <table id="summaryTable" style="width:100%; border-collapse:collapse;">
+                <thead>
+                <tr>
+                    <th>Table Name</th>
+                    <th>Total Value</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+                <tfoot>
+                <tr>
+                    <td style="font-weight:bold;">Grand Total</td>
+                    <td id="grandTotalCell" style="font-weight:bold;">0</td>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    <div id="comparePage" style="display:none;">
+        <div style="text-align:center; margin: 30px 0;">
+            <label>Select JSON files: <input type="file" id="compareFiles" accept=".json" multiple></label>
+            <label style="margin-left:20px;">Chart type:
+                <select id="compareChartType">
+                    <option value="bar" selected>Bar</option>
+                    <option value="line">Line</option>
+                    <option value="radar">Radar</option>
+                </select>
+            </label>
+            <button onclick="compareTablesFromFiles()" style="margin-left:20px;">Compare Tables</button>
+        </div>
+        <div id="comparisonCharts" style="display:flex; flex-wrap:wrap; gap:40px; justify-content:center;"></div>
+    </div>
+
+    <div id="notificationPanel" style="position:fixed; right:24px; bottom:24px; width:340px; max-height:320px; background:#fff; border:1px solid #bbb; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.12); z-index:1000; display:none; flex-direction:column;">
+        <div style="padding:10px 16px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-weight:bold;">Notification Log</span>
+            <button onclick="clearNotificationLog()" style="font-size:13px;">Clear</button>
+            <button onclick="document.getElementById('notificationPanel').style.display='none'" style="font-size:13px; margin-left:8px;">Close</button>
+        </div>
+        <div id="notificationLog" style="overflow-y:auto; padding:10px 16px; font-size:14px; flex:1 1 auto;"></div>
+    </div>
+    <button id="showNotificationBtn" onclick="toggleNotificationPanel()" style="position:fixed; right:24px; bottom:24px; z-index:1001; background:#1976d2; color:#fff; border:none; border-radius:50%; width:48px; height:48px; font-size:22px; box-shadow:0 2px 8px rgba(0,0,0,0.18);">🔔</button>
+
+    <script>
+
+        // Page switching logic
+        function showPage(page) {
+            document.getElementById('homePage').style.display   = (page === 'home')   ? '' : 'none';
+            document.getElementById('createPage').style.display = (page === 'create') ? '' : 'none';
+            document.getElementById('comparePage').style.display= (page === 'compare')? '' : 'none';
+            document.getElementById('menuHome').style.fontWeight   = (page === 'home')   ? 'bold' : 'normal';
+            document.getElementById('menuCreate').style.fontWeight = (page === 'create') ? 'bold' : 'normal';
+            document.getElementById('menuCompare').style.fontWeight= (page === 'compare')? 'bold' : 'normal';
+
+            // remember last page
+            try { localStorage.setItem('tc_lastPage', page); } catch (e) {}
+        }
+        // Show home page by default
+        showPage('home');
+
+                let compareFilesData = [];
+
+                document.getElementById('compareFiles').addEventListener('change', function(e) {
+                    compareFilesData = [];
+                    const files = Array.from(e.target.files || []);
+                    if (!files.length) return;
+                    let remaining = files.length;
+                    files.forEach((file, index) => {
+                        const reader = new FileReader();
+                        reader.onload = function(ev) {
+                            try {
+                                const data = JSON.parse(ev.target.result);
+                                compareFilesData.push({ name: file.name, tables: data });
+                            } catch (err) {
+                                alert(`Invalid JSON file: ${file.name}`);
+                            } finally {
+                                remaining--;
+                            }
+                        };
+                        reader.readAsText(file);
+                    });
+                });
+
+                function compareTablesFromFiles() {
+                    if (!compareFilesData.length) {
+                        alert('Please select at least two JSON files.');
+                        return;
+                    }
+                    const chartsDiv = document.getElementById('comparisonCharts');
+                    chartsDiv.innerHTML = '';
+
+                    const chartTypeSelect = document.getElementById('compareChartType');
+                    const chartType = chartTypeSelect ? chartTypeSelect.value : 'bar';
+
+                    // Build a map: tableName -> { fileName -> tableData }
+                    const tableMap = new Map();
+                    compareFilesData.forEach(fileEntry => {
+                        (fileEntry.tables || []).forEach(table => {
+                            if (!tableMap.has(table.name)) {
+                                tableMap.set(table.name, new Map());
+                            }
+                            tableMap.get(table.name).set(fileEntry.name, table.data || []);
+                        });
+                    });
+
+                    // For each table present in at least two files, build a comparison chart
+                    tableMap.forEach((fileTableMap, tableName) => {
+                        const fileNames = Array.from(fileTableMap.keys());
+                        if (fileNames.length < 2) return; // need at least two files to compare
+
+                        // Build combined set of labels from all files for this table
+                        const labelsSet = new Set();
+                        fileTableMap.forEach(rows => {
+                            (rows || []).forEach(item => {
+                                const label = item.name + (item.date ? ' (' + item.date + ')' : '');
+                                labelsSet.add(label);
+                            });
+                        });
+                        const labels = Array.from(labelsSet);
+
+                        // Build datasets per file
+                        const datasets = fileNames.map((fileName, idx) => {
+                            const rows = fileTableMap.get(fileName) || [];
+                            const values = labels.map(label => {
+                                const [name, date] = label.split(' (');
+                                const match = rows.find(item => item.name === name && (item.date ? label.includes(item.date) : (!item.date && !date)));
+                                return match ? match.value : 0;
+                            });
+                            const baseColors = [
+                                'rgba(54,162,235,0.6)',
+                                'rgba(255,99,132,0.6)',
+                                'rgba(255,206,86,0.6)',
+                                'rgba(75,192,192,0.6)',
+                                'rgba(153,102,255,0.6)',
+                                'rgba(255,159,64,0.6)'
+                            ];
+                            const color = baseColors[idx % baseColors.length];
+                            return { label: fileName, data: values, backgroundColor: color };
+                        });
+
+                        // Create chart container
+                        const chartContainer = document.createElement('div');
+                        chartContainer.style.width = '400px';
+                        chartContainer.innerHTML = `<h4 style="text-align:center;">${tableName} Comparison</h4><canvas id="cmpChart${tableName.replace(/\W/g,'_')}"></canvas>`;
+                        chartsDiv.appendChild(chartContainer);
+
+                        // Draw chart
+                        setTimeout(() => {
+                            const ctx = document.getElementById(`cmpChart${tableName.replace(/\W/g,'_')}`).getContext('2d');
+                            new Chart(ctx, {
+                                type: chartType,
+                                data: {
+                                    labels: labels,
+                                    datasets: datasets
+                                },
+                                options: {
+                                    responsive: true,
+                                    plugins: { legend: { position: 'top' } },
+                                    scales: { y: { beginAtZero: true } }
+                                }
+                            });
+                        }, 0);
+                    });
+                }
+        let tableCount = 0;
+        let tablesMeta = [];
+        let editState = {}; // { tableIdx: rowIdx }
+
+        function addTable(tableName = '', tableData = [], tableLimit = null) {
+            if (!tableName) {
+                tableName = document.getElementById('tableNameInput').value.trim();
+                if (!tableName) return;
+            }
+            if (tableLimit === null) {
+                tableLimit = parseFloat(document.getElementById('tableLimitInput').value);
+                if (isNaN(tableLimit) || tableLimit <= 0) return;
+            }
+            tableCount++;
+            const container = document.createElement('div');
+            container.className = 'table-container col-12 col-md-6 col-lg-4';
+            container.id = `tableContainer${tableCount}`;
+
+            container.innerHTML = `
+                <div id="limitMsg${tableCount}" class="limit-message" style="display:none;">the limit is reached</div>
+                <div class="table-title">${tableName}
+                    <button style="float:right; font-size:0.8em;" onclick="removeTable(${tableCount})">Remove Table</button>
+                </div>
+                <div id="tableNoteRow${tableCount}" style="text-align:left; margin:6px 0 10px 0;">
+                    <div id="tableNoteDisplay${tableCount}" style="color:#1976d2; font-style:italic; cursor:pointer; white-space:pre-wrap;" title="Click to add/edit table note">Add a table note...</div>
+                    <span id="tableNoteEditBox${tableCount}" style="display:none;">
+                        <textarea id="tableNoteInput${tableCount}" placeholder="Enter table note" style="width:90%; min-height:60px; resize:vertical;"></textarea>
+                        <button onclick="saveTableLevelNote(${tableCount})">Save</button>
+                        <button onclick="cancelTableLevelNote(${tableCount})">Cancel</button>
+                    </span>
+                </div>
+                <div style="text-align:right; margin-bottom:8px;">
+                    <span id="limitValue${tableCount}">Limit: ${tableLimit}</span>
+                    <button onclick="showEditLimit(${tableCount})" style="margin-left:8px;">Edit Limit</button>
+                    <span id="editLimitBox${tableCount}" style="display:none;">
+                        <input type="number" id="newLimitInput${tableCount}" min="1" style="width:70px;">
+                        <button onclick="saveNewLimit(${tableCount})">Save</button>
+                        <button onclick="cancelEditLimit(${tableCount})">Cancel</button>
+                    </span>
+                </div>
+                <table id="dataTable${tableCount}" class="table table-sm table-bordered table-striped mb-2">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Value</th>
+                            <th>Date</th>
+                            <th>Note</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                    <tfoot>
+                        <tr>
+                            <td>Total</td>
+                            <td id="totalValue${tableCount}">0</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+                <div class="input-row">
+                    <input type="text" id="nameInput${tableCount}" placeholder="Name" required>
+                    <input type="number" id="valueInput${tableCount}" placeholder="Value" required>
+                    <input type="date" id="dateInput${tableCount}">
+                    <textarea id="noteInput${tableCount}" placeholder="Note" style="min-height:40px; resize:vertical;"></textarea>
+                    <button id="addBtn${tableCount}" onclick="addRow(${tableCount})">Add</button>
+                    <button id="undoBtn${tableCount}" style="margin-left:8px; display:none;" onclick="undoDeleteRow(${tableCount})">Undo Delete</button>
+                </div>
+                <canvas id="chart${tableCount}" height="100"></canvas>
+            `;
+            const tablesArea = document.getElementById('tablesArea');
+            if (tablesArea.firstChild) {
+                tablesArea.insertBefore(container, tablesArea.firstChild);
+            } else {
+                tablesArea.appendChild(container);
+            }
+
+            window[`tableData${tableCount}`] = [];
+            window[`chartObj${tableCount}`] = createChart(`chart${tableCount}`, []);
+            tablesMeta[tableCount - 1] = { name: tableName, limit: tableLimit, comment: tablesMeta[tableCount - 1]?.comment || '' };
+
+            if (tableData.length) {
+                window[`tableData${tableCount}`] = tableData.map(item => ({ name: item.name, value: item.value, date: item.date, note: item.note }));
+                renderTableRows(tableCount);
+                updateTotal(tableCount);
+                updateChart(tableCount);
+            }
+
+            document.getElementById('tableNameInput').value = '';
+            document.getElementById('tableLimitInput').value = '';
+            // Initialize table-level note display/edit behavior
+            const noteDisplay = document.getElementById(`tableNoteDisplay${tableCount}`);
+            const noteEditBox = document.getElementById(`tableNoteEditBox${tableCount}`);
+            const noteInput = document.getElementById(`tableNoteInput${tableCount}`);
+            const initialNote = tablesMeta[tableCount - 1].comment || '';
+            if (initialNote) noteDisplay.textContent = initialNote;
+            noteDisplay.onclick = function() {
+                noteEditBox.style.display = 'inline';
+                noteInput.value = tablesMeta[tableCount - 1].comment || '';
+                noteDisplay.style.display = 'none';
+                noteInput.focus();
+            };
+        }
+
+       // In addRow, update the validation to allow empty date:
+        function addRow(idx) {
+            const nameInput = document.getElementById(`nameInput${idx}`);
+            const valueInput = document.getElementById(`valueInput${idx}`);
+            const dateInput = document.getElementById(`dateInput${idx}`);
+            const noteInput = document.getElementById(`noteInput${idx}`);
+            const addBtn = document.getElementById(`addBtn${idx}`);
+            const name = nameInput.value.trim();
+            const value = parseFloat(valueInput.value);
+            const date = dateInput.value; // can be empty
+            const note = (noteInput?.value || '').trim();
+
+            if (addBtn.textContent === 'Update') {
+                const rowIdx = editState[idx];
+                if (rowIdx !== undefined && name && !isNaN(value)) {
+                    window[`tableData${idx}`][rowIdx] = { name, value, date, note };
+                    renderTableRows(idx);
+                    updateTotal(idx);
+                    updateChart(idx);
+                    addBtn.textContent = 'Add';
+                    editState[idx] = undefined;
+                    nameInput.value = '';
+                    valueInput.value = '';
+                    dateInput.value = '';
+                    if (noteInput) noteInput.value = '';
+                }
+            } else {
+                if (name && !isNaN(value)) {
+                    window[`tableData${idx}`].push({ name, value, date, note });
+                    renderTableRows(idx);
+                    updateTotal(idx);
+                    updateChart(idx);
+                    nameInput.value = '';
+                    valueInput.value = '';
+                    dateInput.value = '';
+                    if (noteInput) noteInput.value = '';
+                }
+            }
+        }
+
+        // In renderTableRows, show empty cell if date is missing:
+        function renderTableRows(idx) {
+            const tableBody = document.querySelector(`#dataTable${idx} tbody`);
+            tableBody.innerHTML = '';
+            window[`tableData${idx}`].forEach((item, i) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${i + 1}</td>
+                    <td>${item.name}</td>
+                    <td>${item.value}</td>
+                    <td>${item.date || ''}</td>
+                    <td><div style="white-space:pre-wrap;">${item.note || ''}</div></td>
+                    <td>
+                        <button onclick="editRow(${idx}, ${i})">Edit</button>
+                        <button onclick="deleteRow(${idx}, ${i})">Delete</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+            // Toggle visibility of Undo button beside Add
+            let undoBtn = document.getElementById(`undoBtn${idx}`);
+            if (lastDeletedRow[idx]) {
+                undoBtn.style.display = 'inline-block';
+            } else {
+                undoBtn.style.display = 'none';
+            }
+        }
+
+        function removeTable(idx) {
+            const container = document.getElementById(`tableContainer${idx}`);
+            if (!container) return;
+            const tableName = tablesMeta[idx - 1]?.name || `Table ${idx}`;
+            if (!confirm(`Are you sure you want to remove "${tableName}"?`)) return;
+
+            container.remove();
+            window[`tableData${idx}`] = [];
+            if (window[`chartObj${idx}`]) {
+                try { window[`chartObj${idx}`].destroy(); } catch (e) {}
+                window[`chartObj${idx}`] = null;
+            }
+            if (tablesMeta[idx - 1]) {
+                tablesMeta[idx - 1] = { name: '', limit: 0, comment: '' };
+            }
+            lastDeletedRow[idx] = null;
+            updateSummaryTable();
+            logNotification(`Table removed: ${tableName}`);
+        }
+
+        // --- Row Deletion and Undo Functionality ---
+        // Store last deleted row per table
+        let lastDeletedRow = {};
+
+        function deleteRow(tableIdx, rowIdx) {
+            const data = window[`tableData${tableIdx}`];
+            if (!data || rowIdx < 0 || rowIdx >= data.length) return;
+            // Save deleted row and its index
+            lastDeletedRow[tableIdx] = { row: data[rowIdx], index: rowIdx };
+            data.splice(rowIdx, 1);
+            renderTableRows(tableIdx);
+            updateTotal(tableIdx);
+            updateChart(tableIdx);
+        }
+
+        function undoDeleteRow(tableIdx) {
+            const info = lastDeletedRow[tableIdx];
+            if (!info) return;
+            window[`tableData${tableIdx}`].splice(info.index, 0, info.row);
+            lastDeletedRow[tableIdx] = null;
+            renderTableRows(tableIdx);
+            updateTotal(tableIdx);
+            updateChart(tableIdx);
+        }
+
+        function editRow(tableIdx, rowIdx) {
+            const item = window[`tableData${tableIdx}`][rowIdx];
+            document.getElementById(`nameInput${tableIdx}`).value = item.name;
+            document.getElementById(`valueInput${tableIdx}`).value = item.value;
+            document.getElementById(`dateInput${tableIdx}`).value = item.date;
+            const noteEl = document.getElementById(`noteInput${tableIdx}`);
+            if (noteEl) noteEl.value = item.note || '';
+            document.getElementById(`addBtn${tableIdx}`).textContent = 'Update';
+            editState[tableIdx] = rowIdx;
+        }
+
+        // Patch addTable to include a progress bar
+    const origAddTableForProgress = addTable;
+    addTable = function(tableName = '', tableData = [], tableLimit = null) {
+        origAddTableForProgress(tableName, tableData, tableLimit);
+        // Insert progress bar at the top of the table
+        const idx = tableCount;
+        const container = document.getElementById(`tableContainer${idx}`);
+        let barContainer = document.createElement('div');
+        barContainer.className = 'progress-bar-container';
+        barContainer.innerHTML = `<div id="progressBar${idx}" class="progress-bar" style="width:0%;background:#4caf50"></div>`;
+        container.insertBefore(barContainer, container.firstChild.nextSibling); // after limitMsg
+        updateProgressBar(idx);
+    };
+
+    // Update progress bar in updateTotal
+    const origUpdateTotalForProgress = updateTotal;
+    updateTotal = function(idx) {
+        origUpdateTotalForProgress(idx);
+        updateProgressBar(idx);
+    };
+
+    function updateProgressBar(idx) {
+        const total = window[`tableData${idx}`].reduce((sum, item) => sum + item.value, 0);
+        const limit = tablesMeta[idx - 1]?.limit;
+        const bar = document.getElementById(`progressBar${idx}`);
+        if (!bar || !limit) return;
+        let percent = Math.min(100, (total / limit) * 100);
+        bar.style.width = percent + '%';
+        if (percent < 70) {
+            bar.style.background = '#4caf50'; // green
+        } else if (percent < 100) {
+            bar.style.background = '#ffc107'; // yellow
+        } else {
+            bar.style.background = '#f44336'; // red
+        }
+    }
+
+        function updateTotal(idx) {
+            const total = window[`tableData${idx}`].reduce((sum, item) => sum + item.value, 0);
+            document.getElementById(`totalValue${idx}`).textContent = total;
+            const limit = tablesMeta[idx - 1]?.limit;
+            const container = document.getElementById(`tableContainer${idx}`);
+            const msg = document.getElementById(`limitMsg${idx}`);
+            if (limit !== undefined) {
+                if (total >= limit) {
+                    const diff = total - limit;
+                    msg.textContent = `The limit (${limit}) is reached. Exceeded by: ${diff}`;
+                    container.classList.add('limit-reached');
+                    msg.style.display = 'block';
+                } else {
+                    const diff = limit - total;
+                    msg.textContent = `You can add ${diff} more before reaching the limit (Limit: ${limit})`;
+                    container.classList.remove('limit-reached');
+                    msg.style.display = 'block';
+                }
+            } else {
+                msg.textContent = '';
+                container.classList.remove('limit-reached');
+                msg.style.display = 'none';
+            }
+            updateSummaryTable();
+        }
+
+
+
+        function createChart(canvasId, data) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Values',
+                        data: [],
+                        borderColor: 'rgba(54, 162, 235, 0.8)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        fill: false,
+                        tension: 0.2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+       // In updateChart, handle empty date:
+        function updateChart(idx) {
+            const chart = window[`chartObj${idx}`];
+            const data = window[`tableData${idx}`];
+            chart.data.labels = data.map(item => item.date ? `${item.name} (${item.date})` : item.name);
+            chart.data.datasets[0].data = data.map(item => item.value);
+            chart.update();
+        }
+
+        function exportTables() {
+            const tables = [];
+            for (let i = 1; i <= tableCount; i++) {
+                if (window[`tableData${i}`]) {
+                    tables.push({
+                        name: tablesMeta[i - 1]?.name || '',
+                        limit: tablesMeta[i - 1]?.limit || 0,
+                        comment: tablesMeta[i - 1]?.comment || '',
+                        data: window[`tableData${i}`]
+                    });
+                }
+            }
+            const json = JSON.stringify(tables, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'tables-data.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function importTables(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const tables = JSON.parse(e.target.result);
+                    document.getElementById('tablesArea').innerHTML = '';
+                    tableCount = 0;
+                    tablesMeta = [];
+                    editState = {};
+                    if (typeof lastDeletedRow !== 'undefined') {
+                        lastDeletedRow = {};
+                    }
+                    tables.forEach(table => {
+                        addTable(table.name, table.data, table.limit);
+                        const idx = tableCount;
+                        if (table.comment !== undefined) {
+                            tablesMeta[idx - 1].comment = table.comment || '';
+                            const display = document.getElementById(`tableNoteDisplay${idx}`);
+                            if (display) display.textContent = table.comment || 'Add a table note...';
+                        }
+                    });
+                    updateSummaryTable();
+                    makeTablesDraggable();  // <- ensure DnD state matches the new DOM
+                } catch (err) {
+                    alert('Invalid JSON file');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function updateSummaryTable() {
+            const tbody = document.querySelector('#summaryTable tbody');
+            tbody.innerHTML = '';
+            let grandTotal = 0;
+            for (let i = 1; i <= tableCount; i++) {
+                const tableName = tablesMeta[i - 1]?.name || `Table ${i}`;
+                const total = window[`tableData${i}`]?.reduce((sum, item) => sum + item.value, 0) || 0;
+                grandTotal += total;
+                const row = document.createElement('tr');
+                row.innerHTML = `<td>${tableName}</td><td>${total}</td>`;
+                tbody.appendChild(row);
+            }
+            document.getElementById('grandTotalCell').textContent = grandTotal;
+        }
+
+        function clearAllTables() {
+            if (!confirm('This will remove all tables and data. Continue?')) return;
+            // Clear DOM
+            document.getElementById('tablesArea').innerHTML = '';
+            // Reset state
+            tableCount = 0;
+            tablesMeta = [];
+            editState = {};
+            if (typeof lastDeletedRow !== 'undefined') {
+                lastDeletedRow = {};
+            }
+            // Reset inputs
+            const nameInput = document.getElementById('tableNameInput');
+            const limitInput = document.getElementById('tableLimitInput');
+            const searchInput = document.getElementById('globalSearchInput');
+            if (nameInput) nameInput.value = '';
+            if (limitInput) limitInput.value = '';
+            if (searchInput) searchInput.value = '';
+
+            updateSummaryTable();
+            logNotification('All tables cleared and workspace reset.');
+        }
+
+        function refreshPage() {
+            if (confirm('Refresh will fully reset the page and clear all current data. Continue?')) {
+                window.location.reload();
+            }
+        }
+
+        async function generatePdf() {
+            try {
+                const target = document.body; // capture full UI
+                if (!window.html2canvas || !window.jspdf) {
+                    alert('PDF libraries failed to load. Please check your internet connection.');
+                    return;
+                }
+
+                const { jsPDF } = window.jspdf;
+
+                // Temporarily hide floating notification UI for a cleaner export
+                const panel = document.getElementById('notificationPanel');
+                const panelPrev = panel ? panel.style.display : null;
+                const bell = document.getElementById('showNotificationBtn');
+                const bellPrev = bell ? bell.style.display : null;
+                if (panel) panel.style.display = 'none';
+                if (bell) bell.style.display = 'none';
+
+                const canvas = await html2canvas(target, { scale: 2, useCORS: true });
+                const imgData = canvas.toDataURL('image/png');
+
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const pageHeight = pdf.internal.pageSize.getHeight();
+
+                const scale = Math.min(pageWidth / canvas.width, pageHeight / canvas.height);
+                const imgWidth = canvas.width * scale;
+                const imgHeight = canvas.height * scale;
+                const marginX = (pageWidth - imgWidth) / 2;
+                const marginY = (pageHeight - imgHeight) / 2;
+
+                pdf.addImage(imgData, 'PNG', marginX, marginY, imgWidth, imgHeight);
+                pdf.save('table-context-page.pdf');
+
+                if (panel && panelPrev !== null) panel.style.display = panelPrev;
+                if (bell && bellPrev !== null) bell.style.display = bellPrev;
+            } catch (err) {
+                alert('Failed to generate PDF. Please try again.');
+                console.error(err);
+            }
+        }
+
+        // Add these functions to your script:
+        function showEditLimit(idx) {
+            document.getElementById(`editLimitBox${idx}`).style.display = 'inline';
+            document.getElementById(`newLimitInput${idx}`).value = tablesMeta[idx - 1].limit;
+        }
+        function cancelEditLimit(idx) {
+            document.getElementById(`editLimitBox${idx}`).style.display = 'none';
+        }
+        function saveNewLimit(idx) {
+            const input = document.getElementById(`newLimitInput${idx}`);
+            const newLimit = parseFloat(input.value);
+            if (!isNaN(newLimit) && newLimit > 0) {
+                tablesMeta[idx - 1].limit = newLimit;
+                document.getElementById(`limitValue${idx}`).textContent = `Limit: ${newLimit}`;
+                document.getElementById(`editLimitBox${idx}`).style.display = 'none';
+                updateTotal(idx);
+            } else {
+                alert('Please enter a valid limit.');
+            }
+        }
+
+        // --- Drag-and-drop for Tables ---
+    // Make tables draggable
+    function makeTablesDraggable() {
+        const area = document.getElementById('tablesArea');
+        let dragged, fromIdx, toIdx;
+        area.querySelectorAll('.table-container').forEach((el, i) => {
+            el.draggable = true;
+            el.ondragstart = function(e) {
+                dragged = el;
+                fromIdx = i;
+                e.dataTransfer.effectAllowed = 'move';
+            };
+            el.ondragover = function(e) { e.preventDefault(); };
+            el.ondrop = function(e) {
+                e.preventDefault();
+                if (dragged && dragged !== el) {
+                    area.insertBefore(dragged, (el.nextSibling === dragged) ? el : el.nextSibling);
+                    // Swap meta and data
+                    toIdx = Array.from(area.children).indexOf(dragged);
+                    if (fromIdx !== toIdx) {
+                        [tablesMeta[fromIdx], tablesMeta[toIdx]] = [tablesMeta[toIdx], tablesMeta[fromIdx]];
+                        [window[`tableData${fromIdx+1}`], window[`tableData${toIdx+1}`]] = [window[`tableData${toIdx+1}`], window[`tableData${fromIdx+1}`]];
+                        renderAllTables();
+                    }
+                }
+            };
+        });
+    }
+    // Call after adding/removing tables
+    function renderAllTables() {
+        document.getElementById('tablesArea').innerHTML = '';
+        for (let i = 0; i < tablesMeta.length; i++) {
+            addTable(tablesMeta[i].name, window[`tableData${i+1}`], tablesMeta[i].limit);
+        }
+        makeTablesDraggable();
+    }
+    // Call after initial table render
+    document.addEventListener('DOMContentLoaded', makeTablesDraggable);
+
+    // --- Drag-and-drop for Rows ---
+    function makeRowsDraggable(idx) {
+        const tbody = document.querySelector(`#dataTable${idx} tbody`);
+        let draggedRowIdx = null;
+        Array.from(tbody.children).forEach((row, i) => {
+            row.draggable = true;
+            row.ondragstart = function(e) { draggedRowIdx = i; };
+            row.ondragover = function(e) { e.preventDefault(); };
+            row.ondrop = function(e) {
+                e.preventDefault();
+                const targetIdx = Array.from(tbody.children).indexOf(row);
+                if (draggedRowIdx !== null && draggedRowIdx !== targetIdx) {
+                    const data = window[`tableData${idx}`];
+                    const [moved] = data.splice(draggedRowIdx, 1);
+                    data.splice(targetIdx, 0, moved);
+                    renderTableRows(idx);
+                    updateTotal(idx);
+                    updateChart(idx);
+                }
+            };
+        });
+    }
+    // Patch renderTableRows to call makeRowsDraggable (we'll keep behavior but final
+    // implementation of renderTableRows comes later, after all patches)
+    const origRenderTableRowsForDrag = renderTableRows;
+    renderTableRows = function(idx, globalSearch) {
+        origRenderTableRowsForDrag(idx, globalSearch);
+        makeRowsDraggable(idx);
+    };
+
+    // Patch addTable to add help icons to table headers and progress bars
+    const origAddTableForHelp = addTable;
+    addTable = function(tableName = '', tableData = [], tableLimit = null) {
+        origAddTableForHelp(tableName, tableData, tableLimit);
+        const idx = tableCount;
+        // Add help icon to table title
+        const titleDiv = document.querySelector(`#tableContainer${idx} .table-title`);
+        if (titleDiv && !titleDiv.querySelector('.help-icon')) {
+            const help = document.createElement('span');
+            help.className = 'help-icon';
+            help.tabIndex = 0;
+            help.innerHTML = '?<span class="help-tooltip">This is the table name. You can edit it or drag the table to reorder.</span>';
+            titleDiv.appendChild(help);
+        }
+        // Add help icon to progress bar
+        const barContainer = document.querySelector(`#tableContainer${idx} .progress-bar-container`);
+        if (barContainer && !barContainer.querySelector('.help-icon')) {
+            const help = document.createElement('span');
+            help.className = 'help-icon';
+            help.tabIndex = 0;
+            help.innerHTML = '?<span class="help-tooltip">This progress bar shows how close you are to the table limit. Green: safe, Yellow: approaching, Red: exceeded.</span>';
+            barContainer.appendChild(help);
+        }
+        // Add help icon to Add button
+        const addBtn = document.getElementById(`addBtn${idx}`);
+        if (addBtn && !addBtn.parentElement.querySelector('.help-icon')) {
+            const help = document.createElement('span');
+            help.className = 'help-icon';
+            help.tabIndex = 0;
+            help.innerHTML = '?<span class="help-tooltip">Add a new row to this table. You can also drag rows to reorder or delete them.</span>';
+            addBtn.parentElement.appendChild(help);
+        }
+    };
+    // --- Editable Table Name After Creation ---
+    // Patch addTable to make table name editable
+    const origAddTableForEditName = addTable;
+    addTable = function(tableName = '', tableData = [], tableLimit = null) {
+        origAddTableForEditName(tableName, tableData, tableLimit);
+        const idx = tableCount;
+        const titleDiv = document.querySelector(`#tableContainer${idx} .table-title`);
+        if (titleDiv && !titleDiv.querySelector('input')) {
+            titleDiv.style.cursor = 'pointer';
+            titleDiv.title = 'Click to edit table name';
+            // Define the click handler as a named function so it can be re-attached
+            function enableEdit() {
+                if (titleDiv.querySelector('input')) return;
+                const current = titleDiv.childNodes[0].nodeValue || titleDiv.textContent;
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = current.trim();
+                input.style.fontSize = '1em';
+                input.style.width = '70%';
+                input.onblur = function() {
+                    const newName = input.value.trim() || current;
+                    tablesMeta[idx - 1].name = newName;
+                    titleDiv.innerHTML = newName;
+                    // Re-append help icon if present
+                    const helpIcon = document.createElement('span');
+                    helpIcon.className = 'help-icon';
+                    helpIcon.tabIndex = 0;
+                    helpIcon.innerHTML = '?<span class="help-tooltip">This is the table name. You can edit it or drag the table to reorder.</span>';
+                    titleDiv.appendChild(helpIcon);
+                    // Re-attach the click handler for further edits
+                    titleDiv.onclick = enableEdit;
+                };
+                input.onkeydown = function(e) {
+                    if (e.key === 'Enter') input.blur();
+                };
+                // Remove all children and add input
+                titleDiv.innerHTML = '';
+                titleDiv.appendChild(input);
+                input.focus();
+            }
+            titleDiv.onclick = enableEdit;
+        }
+    };
+
+    // --- Clickable Sorting on Table Headers ---
+    // Patch addTable to add sort handlers to table headers
+    const origAddTableForHeaderSort = addTable;
+    addTable = function(tableName = '', tableData = [], tableLimit = null) {
+        origAddTableForHeaderSort(tableName, tableData, tableLimit);
+        const idx = tableCount;
+        const table = document.getElementById(`dataTable${idx}`);
+        if (table) {
+            const headers = table.querySelectorAll('th');
+            const sortState = window[`sortState${idx}`] || { col: null, dir: 1 };
+            function setSort(col) {
+                if (sortState.col === col) sortState.dir *= -1;
+                else { sortState.col = col; sortState.dir = 1; }
+                window[`sortState${idx}`] = sortState;
+                renderTableRows(idx);
+            }
+            headers[0].style.cursor = 'pointer';
+            headers[0].title = 'Sort by Name';
+            headers[0].onclick = () => setSort('name');
+            headers[1].style.cursor = 'pointer';
+            headers[1].title = 'Sort by Value';
+            headers[1].onclick = () => setSort('value');
+            headers[2].style.cursor = 'pointer';
+            headers[2].title = 'Sort by Date';
+            headers[2].onclick = () => setSort('date');
+            headers[3].style.cursor = 'pointer';
+            headers[3].title = 'Sort by Note';
+            headers[3].onclick = () => setSort('note');
+        }
+    };
+
+    // (Keep header/drag behavior; final renderTableRows defined later)
+
+    // --- Add Row Numbers to Table (robust) ---
+    // Patch addTable to ensure row number header and footer cell
+    const origAddTableForRowNumbers2 = addTable;
+    addTable = function(tableName = '', tableData = [], tableLimit = null) {
+        origAddTableForRowNumbers2(tableName, tableData, tableLimit);
+        const idx = tableCount;
+        const table = document.getElementById(`dataTable${idx}`);
+        if (table) {
+            // Add row number header if not present
+            const headerRow = table.querySelector('thead tr');
+            if (headerRow && !headerRow.querySelector('th.rownum')) {
+                const th = document.createElement('th');
+                th.textContent = '#';
+                th.className = 'rownum';
+                headerRow.insertBefore(th, headerRow.firstChild);
+            }
+            // Add row number cell to tfoot for alignment
+            const footRow = table.querySelector('tfoot tr');
+            if (footRow && footRow.children.length < 5) {
+                const td = document.createElement('td');
+                td.textContent = '';
+                footRow.insertBefore(td, footRow.firstChild);
+            }
+        }
+    };
+    // (Row-number behavior will be preserved in final renderTableRows)
+
+    // --- Global Search Functionality ---
+    document.getElementById('globalSearchInput').addEventListener('input', function() {
+        const q = this.value.trim().toLowerCase();
+        for (let i = 1; i <= tableCount; i++) {
+            renderTableRows(i, q);
+        }
+    });
+    // Final unified renderTableRows: supports globalSearch, filtering, sorting, Note column,
+    // row numbers, and drag behavior.
+    renderTableRows = function(idx, globalSearch) {
+        let data = window[`tableData${idx}`].slice();
+        // Global search
+        if (globalSearch) {
+            const q = (globalSearch || '').toLowerCase();
+            data = data.filter(item =>
+                (item.name && item.name.toLowerCase().includes(q)) ||
+                (item.value !== undefined && String(item.value).toLowerCase().includes(q)) ||
+                (item.date && item.date.toLowerCase().includes(q)) ||
+                (item.note && item.note.toLowerCase().includes(q))
+            );
+        } else {
+            // Per-table filter
+            const filterVal = document.getElementById(`filterInput${idx}`)?.value?.toLowerCase() || '';
+            if (filterVal) {
+                data = data.filter(item =>
+                    (item.name && item.name.toLowerCase().includes(filterVal)) ||
+                    (item.value !== undefined && String(item.value).toLowerCase().includes(filterVal)) ||
+                    (item.date && item.date.toLowerCase().includes(filterVal)) ||
+                    (item.note && item.note.toLowerCase().includes(filterVal))
+                );
+            }
+        }
+        // Dropdown sorting
+        const sortVal = document.getElementById(`sortSelect${idx}`)?.value;
+        if (sortVal) {
+            if (sortVal === 'name-asc') data.sort((a, b) => a.name.localeCompare(b.name));
+            if (sortVal === 'name-desc') data.sort((a, b) => b.name.localeCompare(a.name));
+            if (sortVal === 'value-asc') data.sort((a, b) => (a.value||0)-(b.value||0));
+            if (sortVal === 'value-desc') data.sort((a, b) => (b.value||0)-(a.value||0));
+            if (sortVal === 'date-asc') data.sort((a, b) => (a.date||'').localeCompare(b.date||''));
+            if (sortVal === 'date-desc') data.sort((a, b) => (b.date||'').localeCompare(a.date||''));
+        }
+        // Header sorting
+        const sortState = window[`sortState${idx}`];
+        if (sortState && sortState.col) {
+            if (sortState.col === 'name') data.sort((a, b) => sortState.dir * a.name.localeCompare(b.name));
+            if (sortState.col === 'value') data.sort((a, b) => sortState.dir * ((a.value||0)-(b.value||0)));
+            if (sortState.col === 'date') data.sort((a, b) => sortState.dir * ((a.date||'').localeCompare(b.date||'')));
+            if (sortState.col === 'note') data.sort((a, b) => sortState.dir * ((a.note||'').localeCompare(b.note||'')));
+        }
+
+        // Render rows: #, Name, Value, Date, Note, Action
+        const tableBody = document.querySelector(`#dataTable${idx} tbody`);
+        tableBody.innerHTML = '';
+        data.forEach((item, i) => {
+            const origIdx = window[`tableData${idx}`].indexOf(item);
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${i + 1}</td>
+                <td>${item.name}</td>
+                <td>${item.value}</td>
+                <td>${item.date || ''}</td>
+                <td><div style="white-space:pre-wrap;">${item.note || ''}</div></td>
+                <td>
+                    <button onclick="editRow(${idx}, ${origIdx})">Edit</button>
+                    <button onclick="deleteRow(${idx}, ${origIdx})">Delete</button>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+
+        // Undo button handling
+        let undoBtn = document.getElementById(`undoBtn${idx}`);
+        if (!undoBtn) {
+            undoBtn = document.createElement('button');
+            undoBtn.id = `undoBtn${idx}`;
+            undoBtn.textContent = 'Undo Delete';
+            undoBtn.style.marginTop = '8px';
+            undoBtn.style.display = 'none';
+            undoBtn.onclick = function() { undoDeleteRow(idx); };
+            document.getElementById(`tableContainer${idx}`).appendChild(undoBtn);
+        }
+        if (lastDeletedRow[idx]) {
+            undoBtn.style.display = 'inline-block';
+        } else {
+            undoBtn.style.display = 'none';
+        }
+
+        // Keep rows draggable
+        makeRowsDraggable(idx);
+    };
+
+    // --- Chart Type Switcher for Each Table (all types) ---
+    // Patch addTable to add chart type selector with all Chart.js types
+    const origAddTableForChartTypeAll = addTable;
+    addTable = function(tableName = '', tableData = [], tableLimit = null) {
+        origAddTableForChartTypeAll(tableName, tableData, tableLimit);
+        const idx = tableCount;
+        // Add chart type selector if not present
+        let chartTypeDiv = document.getElementById(`chartTypeDiv${idx}`);
+        if (!chartTypeDiv) {
+            chartTypeDiv = document.createElement('div');
+            chartTypeDiv.id = `chartTypeDiv${idx}`;
+            chartTypeDiv.style.textAlign = 'right';
+            chartTypeDiv.style.margin = '4px 0 0 0';
+            chartTypeDiv.innerHTML = `
+                <label style="font-size:13px;">Chart: </label>
+                <select id="chartTypeSelect${idx}" style="font-size:13px;">
+                    <option value="line">Line</option>
+                    <option value="bar">Bar</option>
+                    <option value="radar">Radar</option>
+                    <option value="doughnut">Doughnut</option>
+                    <option value="pie">Pie</option>
+                    <option value="polarArea">Polar Area</option>
+                    <option value="bubble">Bubble</option>
+                    <option value="scatter">Scatter</option>
+                </select>
+            `;
+            const container = document.getElementById(`tableContainer${idx}`);
+            const chartCanvas = document.getElementById(`chart${idx}`);
+            container.insertBefore(chartTypeDiv, chartCanvas);
+            document.getElementById(`chartTypeSelect${idx}`).addEventListener('change', function() {
+                updateChart(idx);
+            });
+        }
+    };
+    // Patch updateChart to use selected chart type and handle special cases for bubble/scatter
+    const origUpdateChartForTypeAll = updateChart;
+    updateChart = function(idx) {
+        const chart = window[`chartObj${idx}`];
+        const data = window[`tableData${idx}`];
+        const typeSel = document.getElementById(`chartTypeSelect${idx}`);
+        const chartType = typeSel ? typeSel.value : 'line';
+        // If chart type changed, destroy and recreate chart
+        if (chart && chart.config.type !== chartType) {
+            chart.destroy();
+            window[`chartObj${idx}`] = createChart(`chart${idx}`, data, chartType);
+        }
+        // Update chart data
+        const newChart = window[`chartObj${idx}`];
+        if (chartType === 'bubble') {
+            newChart.data.datasets[0].data = data.map(item => ({ x: item.name, y: item.value, r: 8 }));
+            newChart.data.labels = data.map(item => item.name);
+        } else if (chartType === 'scatter') {
+            newChart.data.datasets[0].data = data.map(item => ({ x: (item.date ? Date.parse(item.date) || 0 : 0), y: item.value }));
+            newChart.data.labels = data.map(item => item.name);
+        } else if (chartType === 'pie' || chartType === 'doughnut' || chartType === 'polarArea') {
+            newChart.data.labels = data.map(item => item.name);
+            newChart.data.datasets[0].data = data.map(item => item.value);
+        } else {
+            newChart.data.labels = data.map(item => item.date ? `${item.name} (${item.date})` : item.name);
+            newChart.data.datasets[0].data = data.map(item => item.value);
+        }
+        newChart.update();
+    };
+    // Patch createChart to accept all types
+    function createChart(canvasId, data, type = 'line') {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        let dataset = {};
+        if (type === 'bubble') {
+            dataset = {
+                label: 'Values',
+                data: (data || []).map(item => ({ x: item.name, y: item.value, r: 8 })),
+                backgroundColor: 'rgba(54, 162, 235, 0.5)'
+            };
+        } else if (type === 'scatter') {
+            dataset = {
+                label: 'Values',
+                data: (data || []).map(item => ({ x: (item.date ? Date.parse(item.date) || 0 : 0), y: item.value })),
+                backgroundColor: 'rgba(255, 99, 132, 0.5)'
+            };
+        } else {
+            dataset = {
+                label: 'Values',
+                data: (data || []).map(item => item.value),
+                borderColor: 'rgba(54, 162, 235, 0.8)',
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                fill: false,
+                tension: 0.2
+            };
+        }
+        return new Chart(ctx, {
+            type: type,
+            data: {
+                labels: (data || []).map(item => item.date ? `${item.name} (${item.date})` : item.name),
+                datasets: [dataset]
+            },
+            options: {
+                responsive: true,
+                scales: (type === 'pie' || type === 'doughnut' || type === 'polarArea') ? {} : { y: { beginAtZero: true } }
+            }
+        });
+    }
+
+    // --- Notification Log/History Panel ---
+    let notificationLog = [];
+    function logNotification(msg) {
+        const time = new Date().toLocaleTimeString();
+        notificationLog.unshift(`[${time}] ${msg}`);
+        if (notificationLog.length > 100) notificationLog.length = 100;
+        updateNotificationPanel();
+    }
+    function updateNotificationPanel() {
+        const logDiv = document.getElementById('notificationLog');
+        if (!logDiv) return;
+        logDiv.innerHTML = notificationLog.length ? notificationLog.map(m => `<div style='margin-bottom:6px;'>${m}</div>`).join('') : '<em>No notifications yet.</em>';
+    }
+    function toggleNotificationPanel() {
+        const panel = document.getElementById('notificationPanel');
+        panel.style.display = (panel.style.display === 'none' || !panel.style.display) ? 'flex' : 'none';
+        updateNotificationPanel();
+    }
+    function clearNotificationLog() {
+        notificationLog = [];
+        updateNotificationPanel();
+    }
+    // Log key actions
+    const origAddTableForLog = addTable;
+    addTable = function(tableName = '', tableData = [], tableLimit = null) {
+        origAddTableForLog(tableName, tableData, tableLimit);
+        logNotification(`Table "${tableName || tablesMeta[tableCount-1]?.name || ''}" added.`);
+    };
+    const origAddRowForLog = addRow;
+    addRow = function(idx) {
+        const nameInput = document.getElementById(`nameInput${idx}`);
+        const valueInput = document.getElementById(`valueInput${idx}`);
+        const dateInput = document.getElementById(`dateInput${idx}`);
+        const name = nameInput.value.trim();
+        const value = parseFloat(valueInput.value);
+        const date = dateInput.value;
+        const isUpdate = document.getElementById(`addBtn${idx}`).textContent === 'Update';
+        origAddRowForLog(idx);
+        if (isUpdate) {
+            logNotification(`Row updated in table "${tablesMeta[idx-1]?.name || idx}" (${name}, ${value}${date ? ', ' + date : ''}).`);
+        } else if (name && !isNaN(value)) {
+            logNotification(`Row added to table "${tablesMeta[idx-1]?.name || idx}" (${name}, ${value}${date ? ', ' + date : ''}).`);
+        }
+    };
+    const origDeleteRowForLog = deleteRow;
+    deleteRow = function(tableIdx, rowIdx) {
+        const data = window[`tableData${tableIdx}`];
+        const row = data && data[rowIdx];
+        origDeleteRowForLog(tableIdx, rowIdx);
+        if (row) logNotification(`Row deleted from table "${tablesMeta[tableIdx-1]?.name || tableIdx}" (${row.name}, ${row.value}${row.date ? ', ' + row.date : ''}).`);
+    };
+    const origUndoDeleteRowForLog = undoDeleteRow;
+    undoDeleteRow = function(tableIdx) {
+        origUndoDeleteRowForLog(tableIdx);
+        logNotification(`Undo delete in table "${tablesMeta[tableIdx-1]?.name || tableIdx}".`);
+    };
+    const origImportTablesForLog = importTables;
+    importTables = function(event) {
+        origImportTablesForLog(event);
+        logNotification('Tables imported from JSON.');
+    };
+    const origExportTablesForLog = exportTables;
+    exportTables = function() {
+        origExportTablesForLog();
+        logNotification('Tables exported to JSON.');
+    };
+    // Log compare action
+    const origCompareTablesFromFilesForLog = compareTablesFromFiles;
+    compareTablesFromFiles = function() {
+        origCompareTablesFromFilesForLog();
+        logNotification('Compared tables from two files.');
+    };
+
+    // --- Table-level note handlers ---
+    function saveTableLevelNote(idx) {
+        const input = document.getElementById(`tableNoteInput${idx}`);
+        const display = document.getElementById(`tableNoteDisplay${idx}`);
+        const box = document.getElementById(`tableNoteEditBox${idx}`);
+        const note = (input.value || '').trim();
+        tablesMeta[idx - 1].comment = note;
+        display.textContent = note || 'Add a table note...';
+        box.style.display = 'none';
+        display.style.display = '';
+        logNotification(`Table note ${note ? 'saved' : 'cleared'} for "${tablesMeta[idx-1]?.name || idx}".`);
+    }
+    function cancelTableLevelNote(idx) {
+        const display = document.getElementById(`tableNoteDisplay${idx}`);
+        const box = document.getElementById(`tableNoteEditBox${idx}`);
+        box.style.display = 'none';
+        display.style.display = '';
+    }
+
+    </script>
+
+</body>
+</html>
